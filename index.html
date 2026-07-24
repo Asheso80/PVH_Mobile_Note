@@ -152,8 +152,12 @@
 
   <div class="card">
     <label>Photos <span class="hint">from camera; stored in the capture file</span></label>
-    <input id="photoInput" type="file" accept="image/*" capture="environment" multiple style="display:none">
-    <button class="btn ghost" id="btnPhoto" type="button">📷 Add photo</button>
+    <input id="cameraInput" type="file" accept="image/*" capture="environment" multiple style="display:none">
+    <input id="galleryInput" type="file" accept="image/*" multiple style="display:none">
+    <div class="row">
+      <button class="btn ghost" id="btnCamera" type="button">📷 Camera</button>
+      <button class="btn ghost" id="btnGallery" type="button">🖼️ Gallery</button>
+    </div>
     <div class="photos" id="photos"></div>
     <div class="hint" id="photoSize" style="margin-top:8px">&nbsp;</div>
   </div>
@@ -237,8 +241,10 @@ function init(){
   });
   $("officer").addEventListener("change", e=>saveOfficer(e.target.value.trim()));
   $("vin").addEventListener("input", vinCheck);
-  $("btnPhoto").addEventListener("click", ()=>$("photoInput").click());
-  $("photoInput").addEventListener("change", onPhoto);
+  $("btnCamera").addEventListener("click", ()=>$("cameraInput").click());
+  $("btnGallery").addEventListener("click", ()=>$("galleryInput").click());
+  $("cameraInput").addEventListener("change", onPhoto);
+  $("galleryInput").addEventListener("change", onPhoto);
   $("btnSave").addEventListener("click", save);
   $("btnClear").addEventListener("click", clearForm);
 }
