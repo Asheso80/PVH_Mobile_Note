@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3a5f">
+<title>P-500 Field Capture</title>
+<style>
+  :root{
+    --navy:#1f3a5f; --navy2:#274a78; --line:#c9d2dd; --bg:#eef2f6;
+    --ink:#16202b; --muted:#5c6b7a; --ok:#1a7a44; --warn:#a12a2a; --amber:#8a5a00;
+    --field:#fff; --focus:#2f6fb0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:"Noto Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:17px; line-height:1.4;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    position:sticky; top:0; z-index:5; background:var(--navy); color:#fff;
+    padding:calc(env(safe-area-inset-top) + 10px) 14px 10px; display:flex; align-items:center; gap:10px;
+  }
+  header h1{font-size:17px; margin:0; font-weight:700; letter-spacing:.2px}
+  header .sub{font-size:12px; opacity:.85; margin-top:1px}
+  .wrap{max-width:640px; margin:0 auto; padding:14px 14px 120px}
+  .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:14px}
+  label{display:block; font-weight:600; font-size:14px; margin:0 0 5px; color:var(--ink)}
+  .hint{font-weight:400; color:var(--muted); font-size:12px}
+  input[type=text],input[type=search],input[type=date],input[type=time],select,textarea{
+    width:100%; font-size:17px; padding:12px; border:1px solid var(--line); border-radius:10px;
+    background:var(--field); color:var(--ink); -webkit-appearance:none; appearance:none;
+  }
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--focus); box-shadow:0 0 0 3px rgba(47,111,176,.18)}
+  textarea{min-height:110px; resize:vertical}
+  select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9'><path d='M0 0l7 9 7-9z' fill='%235c6b7a'/></svg>"); background-repeat:no-repeat; background-position:right 14px center; padding-right:38px}
+  .row{display:flex; gap:10px}
+  .row>div{flex:1; min-width:0}
+  .mono{font-variant-ligatures:none; letter-spacing:.5px; text-transform:uppercase}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    font-size:17px; font-weight:600; padding:13px 16px; border-radius:10px; border:1px solid transparent;
+    background:#fff; color:var(--navy); cursor:pointer; width:100%;
+  }
+  .btn.primary{background:var(--navy); color:#fff}
+  .btn.ghost{background:#fff; color:var(--navy); border-color:var(--navy)}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.5}
+  .photos{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+  .thumb{position:relative; width:84px; height:84px; border-radius:8px; overflow:hidden; border:1px solid var(--line); background:#000}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block}
+  .thumb button{position:absolute; top:2px; right:2px; width:24px; height:24px; border-radius:50%; border:0; background:rgba(0,0,0,.65); color:#fff; font-size:16px; line-height:1; cursor:pointer}
+  .bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:6; background:#fff; border-top:1px solid var(--line);
+    padding:10px 14px calc(env(safe-area-inset-bottom) + 10px); display:flex; gap:10px;
+    max-width:640px; margin:0 auto;
+  }
+  .bar .btn{flex:1}
+  .banner{padding:11px 13px; border-radius:10px; font-size:14px; margin-bottom:14px; border:1px solid}
+  .banner.ok{background:#eaf6ee; border-color:#bfe0cb; color:var(--ok)}
+  .banner.warn{background:#fdeaea; border-color:#f2c4c4; color:var(--warn)}
+  .banner.info{background:#eef3fb; border-color:#cdddf3; color:var(--navy2)}
+  .banner.amber{background:#fbf3e2; border-color:#e9d6a8; color:var(--amber)}
+  .foot{color:var(--muted); font-size:12px; text-align:center; padding:6px 14px 0}
+  .req::after{content:" *"; color:var(--warn)}
+  .pill{display:inline-block; font-size:11px; background:#e6edf5; color:var(--navy2); border-radius:20px; padding:2px 9px; margin-left:6px; vertical-align:middle}
+  details summary{font-size:13px; color:var(--navy2); cursor:pointer; padding:4px 0}
+  .savedlist{font-size:13px; color:var(--muted)}
+  .savedlist b{color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <div style="flex:1">
+    <h1>P-500 Field Capture</h1>
+    <div class="sub">CBRM Planning, Inspections &amp; Bylaws &middot; offline field notebook</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="platformBanner"></div>
+  <div id="draftBanner" class="banner amber" style="display:none">
+    <div id="draftMsg"></div>
+    <div style="display:flex; gap:8px; margin-top:8px">
+      <button class="btn ghost" id="btnDraftDiscard" type="button" style="width:auto; padding:8px 14px; font-size:14px">Discard</button>
+      <button class="btn primary" id="btnDraftRestore" type="button" style="width:auto; padding:8px 14px; font-size:14px">Restore</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="req" for="officer">Officer</label>
+    <input id="officer" type="text" autocomplete="name" placeholder="Your name" inputmode="text">
+    <div class="hint" style="margin-top:6px">Remembered on this device for the next capture.</div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="fdate">Date</label>
+        <input id="fdate" type="date">
+      </div>
+      <div>
+        <label for="ftime">Time</label>
+        <input id="ftime" type="time">
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <label for="floc">Location <span class="hint">stop / observation</span></label>
+      <input id="floc" type="text" placeholder="e.g. Charlotte St at Dorchester" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="req" for="offence">Offence <span class="pill" id="seedPill"></span></label>
+    <select id="offence">
+      <option value="">Select offence…</option>
+    </select>
+    <div class="hint" style="margin-top:6px">Pick the by-law section observed. Amount and cease-power are applied on the desk, not here.</div>
+  </div>
+
+  <div class="card">
+    <label for="driver">Driver name</label>
+    <input id="driver" type="text" placeholder="Surname, given" autocomplete="off">
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label for="deck">Deck light no.</label>
+        <input id="deck" class="mono" type="text" inputmode="numeric" placeholder="e.g. 042" autocomplete="off">
+      </div>
+      <div>
+        <label for="plate">Plate</label>
+        <input id="plate" class="mono" type="text" placeholder="e.g. ABC 123" autocomplete="off" autocapitalize="characters">
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <label for="vin">VIN</label>
+      <input id="vin" class="mono" type="text" inputmode="text" maxlength="17" placeholder="17 characters" autocomplete="off" autocapitalize="characters">
+      <div class="hint" id="vinHint" style="margin-top:5px">&nbsp;</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="req" for="note">Narrative</label>
+    <textarea id="note" placeholder="What you observed, in your own words. This becomes the notebook entry."></textarea>
+  </div>
+
+  <div class="card">
+    <label>Photos <span class="hint">from camera; stored in the capture file</span></label>
+    <input id="photoInput" type="file" accept="image/*" capture="environment" multiple style="display:none">
+    <button class="btn ghost" id="btnPhoto" type="button">📷 Add photo</button>
+    <div class="photos" id="photos"></div>
+    <div class="hint" id="photoSize" style="margin-top:8px">&nbsp;</div>
+  </div>
+
+  <details>
+    <summary>About this tool</summary>
+    <div class="hint" style="padding:8px 0 2px">
+      This is a field notebook, not the register itself. Each capture is saved as one
+      self-contained file into your device Downloads, which your sync app copies to the
+      shared drive <b>inbox/</b> folder. On the desktop, the register imports each file
+      as a notebook entry that can be escalated to a full complaint. No file number is
+      allocated in the field — that happens at the desk. Works fully offline.
+    </div>
+  </details>
+
+  <div class="foot" id="verFoot"></div>
+</div>
+
+<div class="bar">
+  <button class="btn ghost" id="btnClear" type="button">Clear</button>
+  <button class="btn primary" id="btnSave" type="button">Save capture</button>
+</div>
+
+<script>
+/* ============================================================================
+   P-500 Field Capture — standalone mobile page.
+   No File System Access API (absent on Android). Output: one self-contained
+   JSON file per capture, written to Downloads via a download link. Photos are
+   embedded as base64 so a capture is never split from its evidence.
+   The desktop register's importInbox() consumes these into notebook.json.
+============================================================================ */
+"use strict";
+
+const APP_VER   = "field-1.0.0";
+const SEED_VER  = "M-1 / 2026-07-22";   // stamp so desktop can flag a stale list
+const PREFIX    = "PVHC";               // matches register file-number prefix
+
+// Embedded offence seed (code + label only; amounts live on the desk).
+const OFFENCES = [{"code":"4(1)","label":"Operating passenger vehicle for hire business without business operator's licence"},{"code":"5.1(1)","label":"Owning and operating taxi without valid taxi owner's licence or taxi operator licence (specify)"},{"code":"5.1(2)","label":"Failing to present valid taxi vehicle owner's licence on demand"},{"code":"5.1(7)","label":"Using taxi vehicle owner's licence for vehicle not licensed as passenger vehicle for hire"},{"code":"5.2(1)","label":"Owning and operating passenger vehicle for hire business without vehicle owner's licence"},{"code":"5.2(2)","label":"Failing to present valid vehicle owner's licence on demand"},{"code":"6","label":"Licence owner failing to have valid insurance policy"},{"code":"7(1)","label":"Failing to keep vehicle in clean, sanitary condition or in good repair (specify)"},{"code":"7(2)","label":"Failing to have appropriate tires affixed (specify)"},{"code":"7(3)","label":"Owner of vehicle failing to submit vehicle for inspection on demand of by-law enforcement officer or peace officer"},{"code":"8","label":"Failing to comply with taxi identification requirements (specify)"},{"code":"9(1)","label":"Driving passenger vehicle for hire without valid operator's licence"},{"code":"9(2)","label":"Failing to present valid Nova Scotia drivers licence or CBRM vehicle operator's licence (specify) on demand"},{"code":"9(3)","label":"Driving vehicle as passenger vehicle for hire without valid vehicle operator's licence"},{"code":"9(10)","label":"Transferring vehicle operator's licence to another person"},{"code":"10(1)(b)","label":"Operator failing to maintain clothing in neat and tidy condition while operating passenger vehicle for hire"},{"code":"10(1)(c)","label":"Operator failing to act in orderly manner or soliciting (specify) while operating passenger vehicle for hire"},{"code":"10(2)","label":"Failing to notify office of manager of address change within 7 days"},{"code":"10(3)(a)","label":"Failing to keep log of all fares for 6 months"},{"code":"10(3)(b)","label":"Failing to produce log of fares upon request of by-law enforcement officer"},{"code":"10(4)","label":"Failing to display vehicle operator's licence while operating passenger vehicle for hire"},{"code":"10(5)","label":"Operator or passenger smoking or vaping in licensed passenger vehicle for hire (specify)"},{"code":"11(1)","label":"Operator failing to proceed by most direct route"},{"code":"11(2)","label":"Operator picking up other passengers"},{"code":"14(1)","label":"Taxi owner failing to provide taxi with approved taximeter in Sydney service area"},{"code":"14(3)","label":"Taxi owner or operator transporting passengers for hire in Sydney service area without taximeter operating"}];
+
+const $ = id => document.getElementById(id);
+let photos = [];   // { name, type, dataUrl }
+
+/* ---- device memory (officer name) ---- */
+const OKEY = "p500.field.officer";
+function loadOfficer(){ try{ return localStorage.getItem(OKEY) || ""; }catch(e){ return ""; } }
+function saveOfficer(v){ try{ localStorage.setItem(OKEY, v); }catch(e){} }
+
+/* ---- unsaved-capture draft (device memory) ----
+   A stop interrupted before "Save capture" — radio call, phone dies, Android
+   reclaims a backgrounded tab — would otherwise lose everything typed and
+   every photo taken, since nothing persisted until that tap. Saved locally
+   (never leaves the device) and offered back on next load; cleared on a
+   successful save or an explicit Clear. */
+const DKEY = "p500.field.draft";
+let draftSaveTimer = null;
+function collectDraft(){
+  return {
+    savedAt: new Date().toISOString(),
+    officer: $("officer").value, fdate: $("fdate").value, ftime: $("ftime").value,
+    floc: $("floc").value, offence: $("offence").value, driver: $("driver").value,
+    deck: $("deck").value, plate: $("plate").value, vin: $("vin").value, note: $("note").value,
+    photos: photos,
+  };
+}
+function draftIsEmpty(d){
+  return !d.floc && !d.offence && !d.driver && !d.deck && !d.plate && !d.vin && !d.note && !d.photos.length;
+}
+function saveDraft(){
+  const d = collectDraft();
+  if (draftIsEmpty(d)) { clearDraft(); return; }
+  try { localStorage.setItem(DKEY, JSON.stringify(d)); }
+  catch(e){
+    // most likely the photos pushed it over the storage quota — keep the
+    // text fields at least, rather than losing the whole draft silently.
+    try { localStorage.setItem(DKEY, JSON.stringify(Object.assign({}, d, { photos: [], photosDropped: d.photos.length }))); }
+    catch(e2){ /* nothing more that can be done locally */ }
+  }
+}
+function scheduleDraftSave(){ clearTimeout(draftSaveTimer); draftSaveTimer = setTimeout(saveDraft, 800); }
+function clearDraft(){ try{ localStorage.removeItem(DKEY); }catch(e){} }
+function loadDraft(){
+  try { const raw = localStorage.getItem(DKEY); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function applyDraft(d){
+  $("officer").value = d.officer || loadOfficer();
+  $("fdate").value = d.fdate || todayISO();
+  $("ftime").value = d.ftime || nowHM();
+  $("floc").value = d.floc || ""; $("offence").value = d.offence || "";
+  $("driver").value = d.driver || ""; $("deck").value = d.deck || "";
+  $("plate").value = d.plate || ""; $("vin").value = d.vin || ""; $("note").value = d.note || "";
+  vinCheck();
+  photos = Array.isArray(d.photos) ? d.photos.slice() : [];
+  renderPhotos();
+}
+
+/* ---- platform check ---- */
+function platformCheck(){
+  const el = $("platformBanner");
+  // The page itself runs anywhere. The only hard requirement is a browser that
+  // can download a file and open the camera — every mainstream Android browser can.
+  const canDownload = "download" in document.createElement("a");
+  if(!canDownload){
+    el.className = "banner warn";
+    el.textContent = "This browser cannot save files directly. Use Chrome on Android.";
+  } else {
+    el.className = "banner info";
+    el.innerHTML = "Captures save to <b>Downloads</b>. Your sync app copies them to the shared-drive <b>inbox/</b>. Works offline.";
+  }
+}
+
+/* ---- init ---- */
+function pad(n){ return String(n).padStart(2,"0"); }
+function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function nowHM(){ const d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
+
+function init(){
+  platformCheck();
+  $("seedPill").textContent = SEED_VER;
+  $("verFoot").textContent = APP_VER + " · offence list " + SEED_VER;
+  $("officer").value = loadOfficer();
+  $("fdate").value = todayISO();
+  $("ftime").value = nowHM();
+  const sel = $("offence");
+  OFFENCES.forEach(o=>{
+    const opt=document.createElement("option");
+    opt.value=o.code; opt.textContent="s."+o.code+" — "+o.label;
+    sel.appendChild(opt);
+  });
+  $("officer").addEventListener("change", e=>saveOfficer(e.target.value.trim()));
+  $("vin").addEventListener("input", vinCheck);
+  $("btnPhoto").addEventListener("click", ()=>$("photoInput").click());
+  $("photoInput").addEventListener("change", onPhoto);
+  $("btnSave").addEventListener("click", save);
+  $("btnClear").addEventListener("click", clearForm);
+
+  // draft autosave: debounced on every field, immediate whenever the page is
+  // about to be hidden/discarded (the moments a plain event handler can't catch)
+  ["officer","fdate","ftime","floc","offence","driver","deck","plate","vin","note"]
+    .forEach(id => $(id).addEventListener("input", scheduleDraftSave));
+  document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState === "hidden") saveDraft(); });
+  window.addEventListener("pagehide", saveDraft);
+
+  const draft = loadDraft();
+  if (draft) {
+    const when = new Date(draft.savedAt).toLocaleString();
+    $("draftMsg").innerHTML = "An unsaved capture from <b>" + when + "</b> was found on this device" +
+      (draft.photosDropped ? " (its " + draft.photosDropped + " photo(s) couldn't be kept — device storage was full; you'll need to retake them)." : ".") +
+      " Restore it, or discard it and start fresh.";
+    $("draftBanner").style.display = "block";
+    $("btnDraftRestore").addEventListener("click", ()=>{ applyDraft(draft); $("draftBanner").style.display = "none"; });
+    $("btnDraftDiscard").addEventListener("click", ()=>{
+      if (!confirm("Discard the unsaved capture from " + when + "?")) return;
+      clearDraft(); $("draftBanner").style.display = "none";
+    });
+  }
+}
+
+/* ---- VIN sanity (advisory only, never blocks) ---- */
+function vinCheck(){
+  const el = $("vin");
+  const raw = el.value;
+  const pos = el.selectionStart == null ? raw.length : el.selectionStart;
+  const upper = raw.toUpperCase();
+  const cleaned = upper.replace(/[^A-HJ-NPR-Z0-9]/g,""); // VINs exclude I,O,Q
+  if (cleaned !== raw) {
+    // keep the caret at the same logical spot instead of jumping to the end —
+    // count how many of the characters before it survive the filter.
+    const survivorsBefore = upper.slice(0, pos).replace(/[^A-HJ-NPR-Z0-9]/g,"").length;
+    el.value = cleaned;
+    el.setSelectionRange(survivorsBefore, survivorsBefore);
+  }
+  const v = cleaned;
+  const h = $("vinHint");
+  if(!v){ h.textContent="\u00a0"; h.style.color=""; return; }
+  if(v.length===17){ h.textContent="17 characters ✓"; h.style.color="var(--ok)"; }
+  else { h.textContent=v.length+" of 17 characters"; h.style.color="var(--amber)"; }
+}
+
+/* ---- photos ----
+   Downscaled + re-encoded before embedding: a full-resolution camera photo
+   (often 3-15MB) would otherwise bloat the capture file 4/3x via base64, on
+   top of already being slow to hold in memory and sync on a phone. Falls
+   back to the original file untouched if compression isn't available. */
+const PHOTO_MAX_DIM = 1920;   // longest edge, px — plenty to read a plate/VIN/decal
+const PHOTO_QUALITY = 0.82;
+async function compressPhoto(file){
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const scale = Math.min(1, PHOTO_MAX_DIM / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * scale)), h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    if (bitmap.close) bitmap.close();
+    return { dataUrl: canvas.toDataURL("image/jpeg", PHOTO_QUALITY), type: "image/jpeg" };
+  } catch(e) { return null; }
+}
+function readOriginalPhoto(f){
+  return new Promise(resolve=>{
+    const r=new FileReader();
+    r.onload=()=>resolve({name:f.name||("photo-"+Date.now()+".jpg"), type:f.type||"image/jpeg", dataUrl:r.result});
+    r.readAsDataURL(f);
+  });
+}
+async function onPhoto(e){
+  const files = Array.from(e.target.files||[]);
+  e.target.value="";
+  // Processed one at a time (not in parallel) so photos land in the array in
+  // the order they were picked, regardless of which finishes decoding first.
+  for (const f of files) {
+    $("photoSize").textContent = "Processing photo…";
+    const compressed = await compressPhoto(f);
+    const entry = compressed
+      ? { name: f.name||("photo-"+Date.now()+".jpg"), type: compressed.type, dataUrl: compressed.dataUrl }
+      : await readOriginalPhoto(f);
+    photos.push(entry);
+    renderPhotos();
+    saveDraft();
+  }
+}
+function renderPhotos(){
+  const box=$("photos"); box.innerHTML="";
+  let bytes=0;
+  photos.forEach((p,i)=>{
+    bytes += Math.ceil((p.dataUrl.length-p.dataUrl.indexOf(",")-1)*3/4);
+    const d=document.createElement("div"); d.className="thumb";
+    const img=document.createElement("img"); img.src=p.dataUrl; img.alt="photo "+(i+1);
+    const b=document.createElement("button"); b.type="button"; b.textContent="×";
+    b.setAttribute("aria-label","remove photo"); b.onclick=()=>{ photos.splice(i,1); renderPhotos(); saveDraft(); };
+    d.appendChild(img); d.appendChild(b); box.appendChild(d);
+  });
+  $("photoSize").textContent = photos.length
+    ? photos.length+" photo(s) · ~"+(bytes/1024/1024).toFixed(1)+" MB in file"
+    : "\u00a0";
+}
+
+/* ---- build + save ---- */
+function stamp(){
+  // sortable, filename-safe timestamp
+  const d=new Date();
+  return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());
+}
+function slug(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,24) || "officer"; }
+
+function save(){
+  const officer = $("officer").value.trim();
+  const offence = $("offence").value;
+  const note    = $("note").value.trim();
+
+  const missing=[];
+  if(!officer) missing.push("Officer");
+  if(!offence) missing.push("Offence");
+  if(!note)    missing.push("Narrative");
+  if(missing.length){ alert("Required before saving:\n\n• "+missing.join("\n• ")); return; }
+
+  const off = OFFENCES.find(o=>o.code===offence) || {code:offence,label:""};
+
+  // Payload shaped so the desktop maps it cleanly onto a notebook entry.
+  // driver -> who, deck light -> deck. Extra field-specific keys carried under "field".
+  const payload = {
+    kind: "p500-field-capture",
+    appVer: APP_VER,
+    seedVer: SEED_VER,
+    prefix: PREFIX,
+    capturedAt: new Date().toISOString(),
+    officer: officer,
+    date: $("fdate").value || todayISO(),
+    time: $("ftime").value || nowHM(),
+    where: $("floc").value.trim(),
+    offence: { code: off.code, label: off.label },
+    who: $("driver").value.trim(),          // driver -> notebook "who"
+    deck: $("deck").value.trim(),           // deck light -> notebook "deck"
+    plate: $("plate").value.trim().toUpperCase(),
+    vin: $("vin").value.trim().toUpperCase(),
+    note: note,
+    photos: photos.map(p=>({name:p.name, type:p.type, dataUrl:p.dataUrl})),
+  };
+
+  const fname = "pvhc-field-" + slug(officer) + "-" + stamp() + ".json";
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+
+  const b=$("platformBanner");
+  b.className="banner ok";
+  b.innerHTML="Saved <b>"+fname+"</b> to Downloads. Your sync app moves it to the shared-drive inbox. Ready for the next capture.";
+  b.scrollIntoView({behavior:"smooth", block:"start"});
+
+  clearDraft(); // this capture is now safely in the download, not just a draft
+
+  // Reset case fields, keep officer/date/time for a fast next stop.
+  ["floc","driver","deck","plate","vin","note"].forEach(id=>$(id).value="");
+  $("offence").value=""; photos=[]; renderPhotos(); $("vinHint").textContent="\u00a0";
+  $("ftime").value=nowHM();
+}
+
+function clearForm(){
+  if(!confirm("Clear this capture? Unsaved data is lost.")) return;
+  clearDraft();
+  ["floc","driver","deck","plate","vin","note"].forEach(id=>$(id).value="");
+  $("offence").value=""; photos=[]; renderPhotos();
+  $("fdate").value=todayISO(); $("ftime").value=nowHM(); $("vinHint").textContent="\u00a0";
+}
+
+init();
+</script>
+</body>
+</html>
